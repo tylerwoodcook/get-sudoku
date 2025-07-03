@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<title>Sudoku API Demo</title>
+	<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+	<style>
+		.cell {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 80px;
+			height: 80px;
+			box-sizing: border-box;
+			border: none;
+			margin: 0;
+			padding: 0;
+			text-align: center;
+			vertical-align: middle;
+			font-size: 40px;
+			font-family: sans-serif;
+		}
+		/* .cell.prefilled {} */
+
+		td {
+			padding: 0;
+			border: 1px solid rgba(00,00,00,0.6);
+		}
+
+		table {
+			border-collapse: collapse;
+			border-spacing: 0;
+			border: 3px solid black;
+		}
+
+		tr td:nth-child(3) {
+			border-right: 3px solid black;
+		}
+
+		tr td:nth-child(6) {
+			border-right: 3px solid black;
+		}
+
+		tr:nth-child(3) {
+			border-bottom: 3px solid black;
+		}
+
+		tr:nth-child(6) {
+			border-bottom: 3px solid black;
+		}
+	</style>
+</head>
+
+<body>
+	<h1>Sudoku from API</h1>
+	<div id="sudoku">Loading...</div>
+
+	<button id="exportImage">Export as Image</button>
+
+
+	<script>
+		function renderBoard(board) {
+			const container = document.getElementById('sudoku');
+			const table = document.createElement('table');
+
+			for (let row = 0; row < 9; row++) {
+				const tr = document.createElement('tr');
+				for (let col = 0; col < 9; col++) {
+					const td = document.createElement('td');
+					const cell = document.createElement('div');
+					cell.classList.add('cell');
+
+					const value = board[row][col];
+					if (value !== null && value !== 0) {
+						cell.textContent = value;
+						cell.classList.add('prefilled');
+					} else {
+						cell.textContent = '';
+					}
+
+					td.appendChild(cell);
+					tr.appendChild(td);
+				}
+				table.appendChild(tr);
+			}
+
+			container.innerHTML = '';
+			container.appendChild(table);
+		}
+
+		function parseSudoku(str) {
+			const size = 9;
+			const grid = [];
+			for (let i = 0; i < size; i++) {
+				const row = str
+					.slice(i * size, (i + 1) * size)
+					.split('')
+					.map(n => (n === '.' ? null : parseInt(n, 10)));
+				grid.push(row);
+			}
+			return grid;
+		}
+
+		// Fetch puzzle from API
+		fetch('/api/puzzle')
+			.then(res => res.json())
+			.then(data => {
+				const board = parseSudoku(data.puzzle);
+				renderBoard(board);
+			})
+			.catch(err => {
+				document.getElementById('sudoku').textContent = 'Failed to load puzzle.';
+				console.error('API error:', err);
+			});
+
+
+		document.getElementById('exportImage').addEventListener('click', () => {
+			const table = document.querySelector('table');
+			html2canvas(table).then(canvas => {
+				const link = document.createElement('a');
+				link.download = 'sudoku.png';
+				link.href = canvas.toDataURL();
+				link.click();
+			});
+		});
+
+	</script>
+</body>
+
+</html>
